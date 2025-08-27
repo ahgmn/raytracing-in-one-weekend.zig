@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
     // This creates another `std.Build.Step.Compile`, but this one builds an executable
     // rather than a static library.
     const exe = b.addExecutable(.{
-        .name = "raytracing_in_one_weekend",
+        .name = "raytracing-in-one-weekend",
         .root_module = exe_mod,
     });
 
@@ -39,7 +39,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     const exe_check = b.addExecutable(.{
-        .name = "raytracing_in_one_weekend",
+        .name = "raytracing-in-one-weekend",
         .root_module = exe_mod,
     });
 

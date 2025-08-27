@@ -1,34 +1,21 @@
 const std = @import("std");
 const m = @import("std").math;
+const mh = @import("math_helpers.zig");
 
 const Vector = @import("vector.zig");
 const Vec3 = Vector.Vec3;
 const Color3 = Vector.Color3;
 const Point3 = Vector.Point3;
 
-pub fn toF32(comptime T: type, from: T) f32 {
-    return @as(f32, @floatFromInt(from));
-}
-
-pub const infinity = m.inf(f32);
-
-pub fn clampToU8(comptime T: type, from: T) u8 {
-    return @as(u8, @intFromFloat(m.clamp(from, 0.0, 1.0) * 255.999));
-}
-
-pub inline fn degreesToRadians(degrees: f32) f32 {
-    return degrees * m.pi / 180.0;
-}
-
 pub fn writeCol(col: Color3, writer: anytype) !void {
-    const r: u8 = clampToU8(f32, col[0]);
-    const g: u8 = clampToU8(f32, col[1]);
-    const b: u8 = clampToU8(f32, col[2]);
+    const r: u8 = mh.clampToU8(f32, col[0]);
+    const g: u8 = mh.clampToU8(f32, col[1]);
+    const b: u8 = mh.clampToU8(f32, col[2]);
     try writer.print("{} {} {}\n", .{ r, g, b });
 }
 
 pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, writer: anytype) !void {
-    const prog = m.clamp(toF32(usize, current) / toF32(usize, max), 0.0, 1.0);
+    const prog = m.clamp(mh.toF32(usize, current) / mh.toF32(usize, max), 0.0, 1.0);
     const final_string: [*c]const u8 = "Done!";
     const final_string_length = comptime std.mem.len(final_string);
     if (bar_length < final_string_length + 2) {

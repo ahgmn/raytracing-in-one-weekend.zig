@@ -1,7 +1,7 @@
+//! TODO: Docstring
 const std = @import("std");
 
-const r = @import("ray.zig");
-const Ray3 = r.Ray3;
+const Ray = @import("ray.zig").Ray;
 const vec = @import("vector.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
@@ -14,17 +14,17 @@ pub const HitRecord = struct {
     t: f32,
     front_face: bool,
 
-    /// outward_normal is assumed to be a unit vector
-    pub fn setFaceNormal(self: *@This(), ray: *const Ray3, outward_normal: *const Vec3) void {
+    /// note!: `outward_normal` is assumed to be a unit vector
+    pub fn setFaceNormal(self: *@This(), ray: *const Ray, outward_normal: *const Vec3) void {
         self.front_face = vec.dot(ray.dir, outward_normal.*) < 0;
         self.normal = if (self.front_face) outward_normal.* else -outward_normal.*;
     }
 };
 
 pub const HittableList = struct {
-    objects: std.ArrayList(*Hittable),
+    objects: std.ArrayList(Hittable),
 
-    pub fn hit(self: *const @This(), ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+    pub fn hit(self: *const @This(), ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
         var record: ?HitRecord = null;
         var closest_so_far = ray_tmax;
         for (self.objects.items) |object| {
@@ -44,16 +44,16 @@ pub const HittableList = struct {
         self.objects.clearAndFree();
     }
 
-    pub fn add(self: *@This(), object: *Hittable) !void {
+    pub fn add(self: *@This(), object: Hittable) !void {
         try self.objects.append(object);
     }
 
     pub fn init(allocator: std.mem.Allocator) @This() {
-        return .{ .objects = std.ArrayList(*Hittable).init(allocator) };
+        return .{ .objects = std.ArrayList(Hittable).init(allocator) };
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
-        for (self.objects.items) |object| {
+        for (self.objects.items) |*object| {
             object.deinit(allocator);
         }
         self.objects.deinit();
@@ -62,10 +62,10 @@ pub const HittableList = struct {
 
 pub const Hittable = struct {
     ptr: *anyopaque,
-    hitFn: *const fn (ptr: *anyopaque, ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord,
+    hitFn: *const fn (ptr: *anyopaque, ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord,
     deinitFn: *const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
 
-    pub fn hit(self: *const @This(), ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+    pub fn hit(self: *const @This(), ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
         return self.hitFn(self.ptr, ray, ray_tmin, ray_tmax);
     }
 
@@ -78,7 +78,7 @@ pub const Sphere = struct {
     center: Point3,
     radius: f32,
 
-    fn hitFn(ptr: *anyopaque, ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+    fn hitFn(ptr: *anyopaque, ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
         const self: *Sphere = @ptrCast(@alignCast(ptr));
         const oc = self.center - ray.orig;
         const a = vec.lenSquared(ray.dir);

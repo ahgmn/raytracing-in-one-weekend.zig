@@ -6,7 +6,7 @@ const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 const toVec = vec.toVec;
 
-pub const Ray3 = struct {
+pub const Ray = struct {
     orig: Point3,
     dir: Vec3,
     pub inline fn new(orig: Point3, dir: Vec3) @This() {

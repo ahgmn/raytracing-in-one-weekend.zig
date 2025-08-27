@@ -1,13 +1,15 @@
 const std = @import("std");
 
-const Ray = @import("ray.zig");
-const Ray3f = Ray.Ray3f;
+const r = @import("ray.zig");
+const Ray3 = r.Ray3;
 const util = @import("utils.zig");
 const vec = @import("vector.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 const toVec = vec.toVec;
+
+const hittable = @import("hittable.zig");
 
 var image_width: usize = 950;
 var image_height: usize = 600;
@@ -20,7 +22,12 @@ inline fn viewport_width() f32 {
 }
 var focal_length: f32 = 2.0;
 
-pub fn ray_color(ray: *const Ray3f) Color3 {
+fn rayColor(ray: *const Ray3) Color3 {
+    // const t = ray.hitSphere(Point3{ 0, 0, -1 }, 0.2);
+    // if (t > 0.0) {
+    //     const N = vec.unit(ray.at(t) - Vec3{ 0, 0, -1 });
+    //     return toVec(0.5) * (N + toVec(1));
+    // }
     const unit_dir = vec.unit(ray.dir);
     const a = 0.5 * (unit_dir[1] + 1.0);
     return toVec(1.0 - a) * Color3{ 1, 1, 1 } + toVec(a) * Color3{ 0.5, 0.7, 1 };
@@ -36,6 +43,12 @@ pub fn main() !void {
     var bw_err = std.io.bufferedWriter(stderr_file);
     const stderr = bw_err.writer();
     // -----------------------
+    // Allocation
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    _ = hittable.Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.5);
 
     const camera_center: Point3 = .{ 0, 0, 0 };
 
@@ -58,8 +71,8 @@ pub fn main() !void {
             const rowf: f32 = util.toF32(usize, row);
             const pixel_center = pixel00_loc + (pixel_delta_u * toVec(colf)) + (pixel_delta_v * toVec(rowf));
             const ray_direction = pixel_center - camera_center;
-            const ray = Ray3f.new(camera_center, ray_direction);
-            const pixel_color = ray_color(&ray);
+            const ray = Ray3.new(camera_center, ray_direction);
+            const pixel_color = rayColor(&ray);
             try util.writeCol(pixel_color, stdout);
         }
     }

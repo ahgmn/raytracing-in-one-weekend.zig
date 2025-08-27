@@ -1,17 +1,18 @@
 const std = @import("std");
 
-const Vector = @import("vector.zig");
-const Vec3f = Vector.Vec3;
-const Color3 = Vector.Color3;
-const Point3 = Vector.Point3;
+const vec = @import("vector.zig");
+const Vec3 = vec.Vec3;
+const Color3 = vec.Color3;
+const Point3 = vec.Point3;
+const toVec = vec.toVec;
 
-pub const Ray3f = struct {
+pub const Ray3 = struct {
     orig: Point3,
-    dir: Vec3f,
-    pub inline fn new(orig: Point3, dir: Vec3f) @This() {
+    dir: Vec3,
+    pub inline fn new(orig: Point3, dir: Vec3) @This() {
         return .{ .orig = orig, .dir = dir };
     }
     pub fn at(self: @This(), t: f32) Point3 {
-        return self.orig.add(self.dir.muls(t));
+        return self.orig + (self.dir * toVec(t));
     }
 };

@@ -70,3 +70,7 @@ pub fn main() !void {
     try bw_err.flush();
     try bw.flush();
 }
+
+test {
+    std.testing.refAllDecls(@This());
+}

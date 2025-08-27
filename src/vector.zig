@@ -21,14 +21,37 @@ pub inline fn unit(vec: Vec3) Vec3 {
 }
 
 pub fn dot(u: Vec3, v: Vec3) f32 {
-    return u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+    return @reduce(.Add, u * v);
 }
+
+/// Used to calculate the cross product between
+/// 2 3-dimensional vectors. The cross product can
+/// be expressed as the determinant of the 3x3
+/// matrix in the form:
+///         +-----+-----+-----+
+///         |  x  |  y  |  z  |
+///         +-----+-----+-----+
+///         | u.x | u.y | u.z |
+///         +-----+-----+-----+
+///         | v.x | v.y | v.z |
+///         +-----+-----+-----+
 pub fn cross(u: Vec3, v: Vec3) Vec3 {
     return .{
         u[1] * v[2] - u[2] * v[1],
         u[2] * v[0] - u[0] * v[2],
-        u[0] * v[1] - u[1] * v[1],
+        u[0] * v[1] - u[1] * v[0],
     };
+}
+
+test "vector dot product" {
+    const a = Vec3{ 2, 4, 6 };
+    const b = Vec3{ 1, -2, 3 };
+    try std.testing.expectApproxEqRel(12.0, dot(a, b), @sqrt(std.math.floatEps(f32)));
+}
+test "vector cross product" {
+    const a = Vec3{ 2, 4, 6 };
+    const b = Vec3{ 1, -2, 3 };
+    try std.testing.expectEqual(Vec3{ 24, 0, -8 }, cross(a, b));
 }
 
 // pub fn Vector3(comptime T: type) type {

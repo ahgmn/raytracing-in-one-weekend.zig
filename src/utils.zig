@@ -1,21 +1,55 @@
+const std = @import("std");
 const m = @import("std").math;
 
 const Vector = @import("vector.zig");
-const Vec3f = Vector.Vec3f;
-const Col3f = Vector.Col3f;
-const Point3f = Vector.Point3f;
+const Vec3 = Vector.Vec3;
+const Color3 = Vector.Color3;
+const Point3 = Vector.Point3;
 
-pub fn to_f32(comptime T: type, from: T) f32 {
+pub fn toF32(comptime T: type, from: T) f32 {
     return @as(f32, @floatFromInt(from));
 }
 
-pub fn clamp_to_u8(comptime T: type, from: T) u8 {
+pub fn clampToU8(comptime T: type, from: T) u8 {
     return @as(u8, @intFromFloat(m.clamp(from, 0.0, 1.0) * 255.999));
 }
 
-pub fn write_col(col: Col3f, writer: anytype) !void {
-    const r: u8 = clamp_to_u8(f32, col.r());
-    const g: u8 = clamp_to_u8(f32, col.g());
-    const b: u8 = clamp_to_u8(f32, col.b());
+pub fn writeCol(col: Color3, writer: anytype) !void {
+    const r: u8 = clampToU8(f32, col[0]);
+    const g: u8 = clampToU8(f32, col[1]);
+    const b: u8 = clampToU8(f32, col[2]);
     try writer.print("{} {} {}\n", .{ r, g, b });
+}
+
+pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, writer: anytype) !void {
+    const prog = m.clamp(toF32(usize, current) / toF32(usize, max), 0.0, 1.0);
+    const final_string: [*c]const u8 = "Done!";
+    const final_string_length = comptime std.mem.len(final_string);
+    if (bar_length < final_string_length + 2) {
+        @compileError("bar_length is too short");
+    }
+    const dash_count = comptime (bar_length - (final_string_length + 2)) / 2;
+
+    const bar_char_amount = bar_length - 2;
+    const hash_count = @as(usize, @intFromFloat(@floor(bar_char_amount * prog)));
+
+    try writer.print("\x1B[2K\r", .{});
+    if (prog == 1.0) {
+        inline for (0..dash_count) |_| {
+            try writer.writeByte('-');
+        }
+        try writer.print(" {s} ", .{final_string});
+        inline for (0..dash_count) |_| {
+            try writer.writeByte('-');
+        }
+    } else {
+        try writer.writeByte('[');
+        for (0..hash_count) |_| {
+            try writer.writeByte('#');
+        }
+        for (0..(bar_char_amount - hash_count)) |_| {
+            try writer.writeByte(' ');
+        }
+        try writer.writeByte(']');
+    }
 }

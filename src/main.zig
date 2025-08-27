@@ -22,14 +22,13 @@ inline fn viewport_width() f32 {
 }
 var focal_length: f32 = 2.0;
 
-fn rayColor(ray: *const Ray3) Color3 {
-    // const t = ray.hitSphere(Point3{ 0, 0, -1 }, 0.2);
-    // if (t > 0.0) {
-    //     const N = vec.unit(ray.at(t) - Vec3{ 0, 0, -1 });
-    //     return toVec(0.5) * (N + toVec(1));
-    // }
-    const unit_dir = vec.unit(ray.dir);
-    const a = 0.5 * (unit_dir[1] + 1.0);
+fn rayColor(ray: *const Ray3, world: *const hittable.HittableList) Color3 {
+    const hit_record = world.hit(ray, 0, util.infinity);
+    if (hit_record != null) {
+        return toVec(0.5) * (hit_record.?.normal + Color3{ 1, 1, 1 });
+    }
+    const unit_direction = vec.unit(ray.dir);
+    const a = 0.5 * (unit_direction[1] + 1.0);
     return toVec(1.0 - a) * Color3{ 1, 1, 1 } + toVec(a) * Color3{ 0.5, 0.7, 1 };
 }
 
@@ -47,8 +46,15 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    // -----------------------
+    // World
+    var world = hittable.HittableList.init(allocator);
+    defer _ = world.deinit(allocator);
 
-    _ = hittable.Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.5);
+    var s1 = hittable.Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2);
+    var s2 = hittable.Sphere.init(allocator, Point3{ 0, -100.5, -1 }, 100);
+    try world.add(&s1);
+    try world.add(&s2);
 
     const camera_center: Point3 = .{ 0, 0, 0 };
 
@@ -72,7 +78,7 @@ pub fn main() !void {
             const pixel_center = pixel00_loc + (pixel_delta_u * toVec(colf)) + (pixel_delta_v * toVec(rowf));
             const ray_direction = pixel_center - camera_center;
             const ray = Ray3.new(camera_center, ray_direction);
-            const pixel_color = rayColor(&ray);
+            const pixel_color = rayColor(&ray, &world);
             try util.writeCol(pixel_color, stdout);
         }
     }

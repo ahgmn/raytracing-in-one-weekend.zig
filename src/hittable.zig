@@ -24,6 +24,19 @@ pub const HitRecord = struct {
 pub const HittableList = struct {
     objects: std.ArrayList(*Hittable),
 
+    pub fn hit(self: *const @This(), ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+        var record: ?HitRecord = null;
+        var closest_so_far = ray_tmax;
+        for (self.objects.items) |object| {
+            const temp_record = object.hit(ray, ray_tmin, closest_so_far);
+            if (temp_record) |rec| {
+                closest_so_far = rec.t;
+                record = rec;
+            } else {}
+        }
+        return record;
+    }
+
     pub fn clearAndFree(self: *@This()) !void {
         for (self.objects.items) |object| {
             object.deinit(self.objects.allocator);
@@ -38,6 +51,7 @@ pub const HittableList = struct {
     pub fn init(allocator: std.mem.Allocator) @This() {
         return .{ .objects = std.ArrayList(*Hittable).init(allocator) };
     }
+
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
         for (self.objects.items) |object| {
             object.deinit(allocator);
@@ -48,10 +62,10 @@ pub const HittableList = struct {
 
 pub const Hittable = struct {
     ptr: *anyopaque,
-    hitFn: *const fn (ptr: *anyopaque, ray: *Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord,
+    hitFn: *const fn (ptr: *anyopaque, ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord,
     deinitFn: *const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
 
-    pub fn hit(self: *@This(), ray: *Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+    pub fn hit(self: *const @This(), ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
         return self.hitFn(self.ptr, ray, ray_tmin, ray_tmax);
     }
 
@@ -64,7 +78,7 @@ pub const Sphere = struct {
     center: Point3,
     radius: f32,
 
-    fn hitFn(ptr: *anyopaque, ray: *Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+    fn hitFn(ptr: *anyopaque, ray: *const Ray3, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
         const self: *Sphere = @ptrCast(@alignCast(ptr));
         const oc = self.center - ray.orig;
         const a = vec.lenSquared(ray.dir);
@@ -95,10 +109,12 @@ pub const Sphere = struct {
         record.setFaceNormal(ray, &outward_normal);
         return record;
     }
+
     fn deinitFn(ptr: *anyopaque, allocator: std.mem.Allocator) void {
         const self: *Sphere = @ptrCast(@alignCast(ptr));
         allocator.destroy(self);
     }
+
     pub fn init(allocator: std.mem.Allocator, center: Point3, radius: f32) Hittable {
         const s = allocator.create(Sphere) catch unreachable;
         const rad = @max(0, radius);

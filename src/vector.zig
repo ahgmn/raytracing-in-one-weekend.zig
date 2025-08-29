@@ -4,12 +4,13 @@ pub const Vec3 = @Vector(3, f32);
 pub const Color3 = Vec3;
 pub const Point3 = Vec3;
 
-pub inline fn toVec(t: f32) Vec3 {
+pub inline fn to(t: f32) Vec3 {
     return @as(Vec3, @splat(t));
 }
 
 pub inline fn lenSquared(vec: Vec3) f32 {
-    return vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
+    return dot(vec, vec);
+    // return vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
 }
 
 pub inline fn len(vec: Vec3) f32 {
@@ -17,10 +18,10 @@ pub inline fn len(vec: Vec3) f32 {
 }
 
 pub inline fn unit(vec: Vec3) Vec3 {
-    return vec / toVec(len(vec));
+    return vec / to(len(vec));
 }
 
-pub fn dot(u: Vec3, v: Vec3) f32 {
+pub inline fn dot(u: Vec3, v: Vec3) f32 {
     return @reduce(.Add, u * v);
 }
 

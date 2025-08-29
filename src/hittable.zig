@@ -1,13 +1,11 @@
 //! TODO: Docstring
 const std = @import("std");
 
-const Ray = @import("ray.zig").Ray;
+const Ray = @import("Ray.zig");
 const vec = @import("vector.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
-const toVec = vec.toVec;
-
 const Interval = @import("interval.zig").Interval(f32);
 
 pub const HitRecord = struct {
@@ -23,8 +21,8 @@ pub const HitRecord = struct {
     }
 };
 
-pub const HittableList = struct {
-    objects: std.ArrayList(Hittable),
+pub const List = struct {
+    objects: std.ArrayList(Object),
 
     pub fn hit(self: *const @This(), ray: *const Ray, ray_t: Interval) ?HitRecord {
         var record: ?HitRecord = null;
@@ -46,12 +44,12 @@ pub const HittableList = struct {
         self.objects.clearAndFree();
     }
 
-    pub fn add(self: *@This(), object: Hittable) !void {
+    pub fn add(self: *@This(), object: Object) !void {
         try self.objects.append(object);
     }
 
     pub fn init(allocator: std.mem.Allocator) @This() {
-        return .{ .objects = std.ArrayList(Hittable).init(allocator) };
+        return .{ .objects = std.ArrayList(Object).init(allocator) };
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
@@ -62,17 +60,17 @@ pub const HittableList = struct {
     }
 };
 
-pub const Hittable = struct {
+pub const Object = struct {
     ptr: *anyopaque,
     hitFn: *const fn (ptr: *anyopaque, ray: *const Ray, ray_t: Interval) ?HitRecord,
-    deinitFn: *const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
+    deinitFn: ?*const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
 
     pub fn hit(self: *const @This(), ray: *const Ray, ray_t: Interval) ?HitRecord {
         return self.hitFn(self.ptr, ray, ray_t);
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
-        self.deinitFn(self.ptr, allocator);
+        if (self.deinitFn) |_deinitFn| _deinitFn(self.ptr, allocator);
     }
 };
 
@@ -101,11 +99,11 @@ pub const Sphere = struct {
         }
 
         const p = ray.at(root);
-        const outward_normal = (p - self.center) / toVec(self.radius);
+        const outward_normal = (p - self.center) / vec.to(self.radius);
         var record = HitRecord{
             .t = root,
             .p = p,
-            .normal = (p - self.center) / toVec(self.radius),
+            .normal = (p - self.center) / vec.to(self.radius),
             .front_face = undefined,
         };
         record.setFaceNormal(ray, &outward_normal);
@@ -117,8 +115,8 @@ pub const Sphere = struct {
         allocator.destroy(self);
     }
 
-    pub fn init(allocator: std.mem.Allocator, center: Point3, radius: f32) Hittable {
-        const s = allocator.create(Sphere) catch unreachable;
+    pub fn init(allocator: std.mem.Allocator, center: Point3, radius: f32) !Object {
+        const s = try allocator.create(Sphere);
         const rad = @max(0, radius);
         s.* = Sphere{ .center = center, .radius = rad };
         return .{ .ptr = s, .hitFn = hitFn, .deinitFn = deinitFn };
@@ -130,7 +128,7 @@ test "sphere allocation" {
     defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
-    var hittable_list = HittableList.init(allocator);
+    var hittable_list = List.init(allocator);
     defer _ = hittable_list.deinit(allocator);
 
     var s = Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2);

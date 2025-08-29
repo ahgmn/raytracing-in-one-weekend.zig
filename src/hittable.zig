@@ -8,6 +8,8 @@ const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 const toVec = vec.toVec;
 
+const Interval = @import("interval.zig").Interval(f32);
+
 pub const HitRecord = struct {
     p: Point3,
     normal: Vec3,
@@ -24,11 +26,11 @@ pub const HitRecord = struct {
 pub const HittableList = struct {
     objects: std.ArrayList(Hittable),
 
-    pub fn hit(self: *const @This(), ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+    pub fn hit(self: *const @This(), ray: *const Ray, ray_t: Interval) ?HitRecord {
         var record: ?HitRecord = null;
-        var closest_so_far = ray_tmax;
+        var closest_so_far = ray_t.max;
         for (self.objects.items) |object| {
-            const temp_record = object.hit(ray, ray_tmin, closest_so_far);
+            const temp_record = object.hit(ray, .{ .min = ray_t.min, .max = closest_so_far });
             if (temp_record) |rec| {
                 closest_so_far = rec.t;
                 record = rec;
@@ -62,11 +64,11 @@ pub const HittableList = struct {
 
 pub const Hittable = struct {
     ptr: *anyopaque,
-    hitFn: *const fn (ptr: *anyopaque, ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord,
+    hitFn: *const fn (ptr: *anyopaque, ray: *const Ray, ray_t: Interval) ?HitRecord,
     deinitFn: *const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
 
-    pub fn hit(self: *const @This(), ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
-        return self.hitFn(self.ptr, ray, ray_tmin, ray_tmax);
+    pub fn hit(self: *const @This(), ray: *const Ray, ray_t: Interval) ?HitRecord {
+        return self.hitFn(self.ptr, ray, ray_t);
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
@@ -78,7 +80,7 @@ pub const Sphere = struct {
     center: Point3,
     radius: f32,
 
-    fn hitFn(ptr: *anyopaque, ray: *const Ray, ray_tmin: f32, ray_tmax: f32) ?HitRecord {
+    fn hitFn(ptr: *anyopaque, ray: *const Ray, ray_t: Interval) ?HitRecord {
         const self: *Sphere = @ptrCast(@alignCast(ptr));
         const oc = self.center - ray.orig;
         const a = vec.lenSquared(ray.dir);
@@ -91,9 +93,9 @@ pub const Sphere = struct {
         const sqrtd = @sqrt(discriminant);
 
         var root = (h - sqrtd) / a;
-        if (root <= ray_tmin or ray_tmax <= root) {
+        if (!ray_t.surrounds(root)) {
             root = (h + sqrtd) / a;
-            if (root <= ray_tmin or ray_tmax <= root) {
+            if (!ray_t.surrounds(root)) {
                 return null;
             }
         }

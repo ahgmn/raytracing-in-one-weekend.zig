@@ -18,7 +18,7 @@ const viewport_width: f32 = viewport_height * aspect_ratio;
 const focal_length: f32 = 2.0;
 
 fn rayColor(ray: *const Ray, world: *const hittable.HittableList) Color3 {
-    const hit_record = world.hit(ray, 0, mh.infinity);
+    const hit_record = world.hit(ray, .{ .min = 0, .max = mh.infinity });
     if (hit_record) |rec| {
         return toVec(0.5) * (rec.normal + Color3{ 1, 1, 1 });
     }

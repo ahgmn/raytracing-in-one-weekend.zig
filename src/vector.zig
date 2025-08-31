@@ -4,7 +4,7 @@ pub const Vec3 = @Vector(3, f32);
 pub const Color3 = Vec3;
 pub const Point3 = Vec3;
 
-pub inline fn to(t: f32) Vec3 {
+pub inline fn from(t: f32) Vec3 {
     return @as(Vec3, @splat(t));
 }
 
@@ -18,7 +18,7 @@ pub inline fn len(vec: Vec3) f32 {
 }
 
 pub inline fn unit(vec: Vec3) Vec3 {
-    return vec / to(len(vec));
+    return vec / from(len(vec));
 }
 
 pub inline fn dot(u: Vec3, v: Vec3) f32 {

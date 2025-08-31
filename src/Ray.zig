@@ -12,5 +12,5 @@ pub inline fn new(orig: Point3, dir: Vec3) @This() {
     return .{ .orig = orig, .dir = dir };
 }
 pub fn at(self: @This(), t: f32) Point3 {
-    return self.orig + (self.dir * vec.to(t));
+    return self.orig + (self.dir * vec.from(t));
 }

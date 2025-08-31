@@ -99,11 +99,11 @@ pub const Sphere = struct {
         }
 
         const p = ray.at(root);
-        const outward_normal = (p - self.center) / vec.to(self.radius);
+        const outward_normal = (p - self.center) / vec.from(self.radius);
         var record = HitRecord{
             .t = root,
             .p = p,
-            .normal = (p - self.center) / vec.to(self.radius),
+            .normal = (p - self.center) / vec.from(self.radius),
             .front_face = undefined,
         };
         record.setFaceNormal(ray, &outward_normal);

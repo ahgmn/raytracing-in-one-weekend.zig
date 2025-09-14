@@ -28,7 +28,7 @@
           default = pkgs.mkShell {
             packages = with pkgs; [
               zig
-              zls
+              zls_0_15
               lldb
             ];
           };

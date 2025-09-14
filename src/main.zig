@@ -12,13 +12,13 @@ const aspect_ratio: f32 = 16.0 / 9.0;
 
 pub fn main() !void {
     // Printing
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
-    const stderr_file = std.io.getStdErr().writer();
-    var bw_err = std.io.bufferedWriter(stderr_file);
-    const stderr = bw_err.writer();
+    var stderr_buffer: [1024]u8 = undefined;
+    var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+    const stderr = &stderr_writer.interface;
     // -----------------------
     // Allocation
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -35,8 +35,8 @@ pub fn main() !void {
 
     try camera.render(&world, stdout, stderr);
 
-    try bw_err.flush();
-    try bw.flush();
+    try stderr.flush();
+    try stdout.flush();
 }
 
 test {

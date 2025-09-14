@@ -1,4 +1,5 @@
 const hittable = @import("hittable.zig");
+const std = @import("std");
 const ih = @import("io_helpers.zig");
 const mh = @import("math_helpers.zig");
 const Ray = @import("Ray.zig");
@@ -15,7 +16,7 @@ pixel_delta_u: Vec3,
 pixel_delta_v: Vec3,
 aspect_ratio: f32,
 
-pub fn render(self: *const @This(), world: *const hittable.List, stdout: anytype, stderr: anytype) !void {
+pub fn render(self: *const @This(), world: *const hittable.List, stdout: *std.Io.Writer, stderr: *std.Io.Writer) !void {
     try stdout.print("P3\n{} {}\n255\n", .{ self.image_width, self.image_height });
 
     for (0..self.image_height) |row| {

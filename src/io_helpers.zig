@@ -7,14 +7,14 @@ const Vec3 = Vector.Vec3;
 const Color3 = Vector.Color3;
 const Point3 = Vector.Point3;
 
-pub fn writeCol(col: Color3, writer: anytype) !void {
+pub fn writeCol(col: Color3, writer: *std.Io.Writer) !void {
     const r: u8 = mh.clampToU8(f32, col[0]);
     const g: u8 = mh.clampToU8(f32, col[1]);
     const b: u8 = mh.clampToU8(f32, col[2]);
     try writer.print("{} {} {}\n", .{ r, g, b });
 }
 
-pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, writer: anytype) !void {
+pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, writer: *std.Io.Writer) !void {
     const prog = m.clamp(mh.toF32(usize, current) / mh.toF32(usize, max), 0.0, 1.0);
     const final_string: [*c]const u8 = "Done!";
     const final_string_length = comptime std.mem.len(final_string);

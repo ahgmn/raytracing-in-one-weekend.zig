@@ -26,10 +26,10 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     // -----------------------
     // World
-    var world = hittable.List.init(allocator);
+    var world = try hittable.List.init(allocator);
     defer world.deinit(allocator);
-    try world.add(try hittable.Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2));
-    try world.add(try hittable.Sphere.init(allocator, Point3{ 0, -100.5, -1 }, 100));
+    try world.add(allocator, try hittable.Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2));
+    try world.add(allocator, try hittable.Sphere.init(allocator, Point3{ 0, -100.5, -1 }, 100));
     // -----------------------
     const camera = Camera.init(image_width, aspect_ratio);
 

@@ -44,19 +44,19 @@ pub const List = struct {
         self.objects.clearAndFree();
     }
 
-    pub fn add(self: *@This(), object: Object) !void {
-        try self.objects.append(object);
+    pub fn add(self: *@This(), allocator: std.mem.Allocator, object: Object) !void {
+        try self.objects.append(allocator, object);
     }
 
-    pub fn init(allocator: std.mem.Allocator) @This() {
-        return .{ .objects = std.ArrayList(Object).init(allocator) };
+    pub fn init(allocator: std.mem.Allocator) !@This() {
+        return .{ .objects = try std.ArrayList(Object).initCapacity(allocator, 16) };
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
         for (self.objects.items) |*object| {
             object.deinit(allocator);
         }
-        self.objects.deinit();
+        self.objects.deinit(allocator);
     }
 };
 

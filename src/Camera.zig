@@ -20,7 +20,7 @@ pub fn render(self: *const @This(), world: *const hittable.List, stdout: *std.Io
     try stdout.print("P3\n{} {}\n255\n", .{ self.image_width, self.image_height });
 
     for (0..self.image_height) |row| {
-        try ih.writeProgressBar(row, self.image_height, 40, stderr);
+        try ih.writeProgressBar(row + 1, self.image_height, 40, stderr);
         for (0..self.image_width) |col| {
             const colf: f32 = mh.toF32(usize, col);
             const rowf: f32 = mh.toF32(usize, row);
@@ -31,7 +31,6 @@ pub fn render(self: *const @This(), world: *const hittable.List, stdout: *std.Io
             try ih.writeCol(pixel_color, stdout);
         }
     }
-    try ih.writeProgressBar(1, 1, 40, stderr);
     try stderr.writeByte('\n');
 }
 pub fn init(image_width: usize, aspect_ratio: f32) @This() {

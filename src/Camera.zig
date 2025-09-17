@@ -16,11 +16,11 @@ pixel_delta_u: Vec3,
 pixel_delta_v: Vec3,
 aspect_ratio: f32,
 
-pub fn render(self: *const @This(), world: *const hittable.List, stdout: *std.Io.Writer, stderr: *std.Io.Writer) !void {
-    try stdout.print("P3\n{} {}\n255\n", .{ self.image_width, self.image_height });
+pub fn render(self: *const @This(), world: *const hittable.List, image_writer: *std.Io.Writer, progress_writer: *std.Io.Writer) !void {
+    try image_writer.print("P3\n{} {}\n255\n", .{ self.image_width, self.image_height });
 
     for (0..self.image_height) |row| {
-        try ih.writeProgressBar(row + 1, self.image_height, 40, stderr);
+        try ih.writeProgressBar(row + 1, self.image_height, 40, progress_writer);
         for (0..self.image_width) |col| {
             const colf: f32 = mh.toF32(usize, col);
             const rowf: f32 = mh.toF32(usize, row);
@@ -28,10 +28,10 @@ pub fn render(self: *const @This(), world: *const hittable.List, stdout: *std.Io
             const ray_direction = pixel_center - self.center;
             const ray = Ray.new(self.center, ray_direction);
             const pixel_color = rayColor(&ray, world);
-            try ih.writeCol(pixel_color, stdout);
+            try ih.writeCol(pixel_color, image_writer);
         }
     }
-    try stderr.writeByte('\n');
+    try progress_writer.writeByte('\n');
 }
 pub fn init(image_width: usize, aspect_ratio: f32) @This() {
     const image_height = @as(usize, @intFromFloat(mh.toF32(usize, image_width) / aspect_ratio));

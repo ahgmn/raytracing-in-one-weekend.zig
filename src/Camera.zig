@@ -18,7 +18,13 @@ aspect_ratio: f32,
 samples_per_pixel: usize,
 pixel_samples_scale: f32,
 
-pub fn render(self: *const @This(), world: *const hittable.List, rand: std.Random, image_writer: *std.Io.Writer, progress_writer: *std.Io.Writer) !void {
+pub fn render(
+    self: *const @This(),
+    world: *const hittable.List,
+    rand: std.Random,
+    image_writer: *std.Io.Writer,
+    progress_writer: *std.Io.Writer,
+) !void {
     try image_writer.print("P3\n{} {}\n255\n", .{ self.image_width, self.image_height });
 
     for (0..self.image_height) |row| {

@@ -8,7 +8,7 @@ const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 
-const image_width: usize = 950;
+const image_width: usize = 250;
 const aspect_ratio: f32 = 16.0 / 9.0;
 const samples_per_pixel = 100;
 
@@ -69,6 +69,7 @@ pub fn main() !void {
 
     try stderr.flush();
     try stdout.flush();
+    try f.flush();
 }
 
 test {

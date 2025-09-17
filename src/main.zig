@@ -10,6 +10,7 @@ const Point3 = vec.Point3;
 
 const image_width: usize = 950;
 const aspect_ratio: f32 = 16.0 / 9.0;
+const samples_per_pixel = 100;
 
 pub fn main() !void {
     // Allocation
@@ -46,6 +47,15 @@ pub fn main() !void {
     var file_writer = file.writer(&file_buffer);
     const f = &file_writer.interface;
     // -----------------------
+    // Random
+    // -----------------------
+    var prng = std.Random.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.posix.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
+    const rand = prng.random();
+    // -----------------------
     // World
     // -----------------------
     var world = try hittable.List.init(allocator);
@@ -53,9 +63,9 @@ pub fn main() !void {
     try world.add(allocator, try hittable.Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2));
     try world.add(allocator, try hittable.Sphere.init(allocator, Point3{ 0, -100.5, -1 }, 100));
     // -----------------------
-    const camera = Camera.init(image_width, aspect_ratio);
+    const camera = Camera.init(image_width, aspect_ratio, samples_per_pixel);
 
-    try camera.render(&world, f, stdout);
+    try camera.render(&world, rand, f, stdout);
 
     try stderr.flush();
     try stdout.flush();

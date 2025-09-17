@@ -15,25 +15,26 @@ pixel00_loc: Point3,
 pixel_delta_u: Vec3,
 pixel_delta_v: Vec3,
 aspect_ratio: f32,
+samples_per_pixel: usize,
+pixel_samples_scale: f32,
 
-pub fn render(self: *const @This(), world: *const hittable.List, image_writer: *std.Io.Writer, progress_writer: *std.Io.Writer) !void {
+pub fn render(self: *const @This(), world: *const hittable.List, rand: std.Random, image_writer: *std.Io.Writer, progress_writer: *std.Io.Writer) !void {
     try image_writer.print("P3\n{} {}\n255\n", .{ self.image_width, self.image_height });
 
     for (0..self.image_height) |row| {
         try ih.writeProgressBar(row + 1, self.image_height, 40, progress_writer);
         for (0..self.image_width) |col| {
-            const colf: f32 = mh.toF32(usize, col);
-            const rowf: f32 = mh.toF32(usize, row);
-            const pixel_center = self.pixel00_loc + (self.pixel_delta_u * vec.from(colf)) + (self.pixel_delta_v * vec.from(rowf));
-            const ray_direction = pixel_center - self.center;
-            const ray = Ray.new(self.center, ray_direction);
-            const pixel_color = rayColor(&ray, world);
-            try ih.writeCol(pixel_color, image_writer);
+            var pixel_color = Color3{ 0, 0, 0 };
+            for (0..self.samples_per_pixel) |_| {
+                const r = getRay(self, col, row, rand);
+                pixel_color += rayColor(&r, world);
+            }
+            try ih.writeColor(vec.from(self.pixel_samples_scale) * pixel_color, image_writer);
         }
     }
     try progress_writer.writeByte('\n');
 }
-pub fn init(image_width: usize, aspect_ratio: f32) @This() {
+pub fn init(image_width: usize, aspect_ratio: f32, samples_per_pixel: u32) @This() {
     const image_height = @as(usize, @intFromFloat(mh.toF32(usize, image_width) / aspect_ratio));
 
     const focal_length = 1.0;
@@ -53,6 +54,8 @@ pub fn init(image_width: usize, aspect_ratio: f32) @This() {
 
     const pixel00_loc = viewport_upper_left + (pixel_delta_u + pixel_delta_v * vec.from(0.5));
 
+    const pixel_samples_scale = 1.0 / mh.toF32(usize, samples_per_pixel);
+
     return .{
         .image_width = image_width,
         .image_height = image_height,
@@ -61,6 +64,8 @@ pub fn init(image_width: usize, aspect_ratio: f32) @This() {
         .pixel_delta_u = pixel_delta_u,
         .pixel_delta_v = pixel_delta_v,
         .aspect_ratio = aspect_ratio,
+        .samples_per_pixel = samples_per_pixel,
+        .pixel_samples_scale = pixel_samples_scale,
     };
 }
 
@@ -72,4 +77,16 @@ fn rayColor(ray: *const Ray, world: *const hittable.List) Color3 {
     const unit_direction = vec.unit(ray.dir);
     const a = 0.5 * (unit_direction[1] + 1.0);
     return vec.from(1.0 - a) * Color3{ 1, 1, 1 } + vec.from(a) * Color3{ 0.5, 0.7, 1 };
+}
+
+fn getRay(self: *const @This(), col: usize, row: usize, rand: std.Random) Ray {
+    const offset = sampleSquare(rand);
+    const pixel_sample = self.pixel00_loc + vec.from(mh.toF32(usize, col) + offset[0]) * self.pixel_delta_u + vec.from(mh.toF32(usize, row) + offset[1]) * self.pixel_delta_v;
+    const ray_origin = self.center;
+    const ray_direction = pixel_sample - ray_origin;
+    return Ray.new(ray_origin, ray_direction);
+}
+
+fn sampleSquare(rand: std.Random) Vec3 {
+    return Vec3{ rand.float(f32) - 0.5, rand.float(f32) - 0.5, 0.0 };
 }

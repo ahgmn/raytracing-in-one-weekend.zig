@@ -1,7 +1,4 @@
-// const std = @import("std");
-// pub const Interval
-
-const infinity = @import("math_helpers.zig").infinity;
+const mh = @import("math_helpers.zig");
 
 pub fn Interval(comptime T: type) type {
     return struct {
@@ -21,12 +18,18 @@ pub fn Interval(comptime T: type) type {
             return self.min < x and x < self.max;
         }
 
+        pub fn clamp(self: *const @This(), x: T) T {
+            if (x < self.min) return self.min;
+            if (x > self.max) return self.max;
+            return x;
+        }
+
         pub fn empty(_: *const @This()) @This() {
-            return .{ .min = infinity, .max = -infinity };
+            return .{ .min = mh.infinity, .max = -mh.infinity };
         }
 
         pub fn universe(_: *const @This()) @This() {
-            return .{ .min = -infinity, .max = infinity };
+            return .{ .min = -mh.infinity, .max = mh.infinity };
         }
     };
 }

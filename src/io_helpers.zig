@@ -1,6 +1,6 @@
 const std = @import("std");
 const assert = std.debug.assert;
-const Interval = @import("interval.zig").Interval(f32);
+const Interval = @import("interval.zig").Interval(f64);
 
 const mh = @import("math_helpers.zig");
 const Vector = @import("vector.zig");
@@ -8,11 +8,11 @@ const Vec3 = Vector.Vec3;
 const Color3 = Vector.Color3;
 const Point3 = Vector.Point3;
 
-/// Write `color` as u8
+/// Write `color` as u8 with gamma
 pub fn writeColor(color: Color3, writer: *std.Io.Writer) !void {
-    const r = color[0];
-    const g = color[1];
-    const b = color[2];
+    const r = mh.linearToGamma(color[0]);
+    const g = mh.linearToGamma(color[1]);
+    const b = mh.linearToGamma(color[2]);
 
     const intensity: Interval = .{ .min = 0.0, .max = 0.999 };
 
@@ -27,7 +27,7 @@ pub fn writeColor(color: Color3, writer: *std.Io.Writer) !void {
 /// `current` should be `max` when done
 pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, writer: *std.Io.Writer) !void {
     assert(current <= max);
-    const prog = std.math.clamp(mh.toF32(usize, current) / mh.toF32(usize, max), 0.0, 1.0);
+    const prog = std.math.clamp(mh.toF64(usize, current) / mh.toF64(usize, max), 0.0, 1.0);
 
     const empty_char = '.';
     const full_char = '#';

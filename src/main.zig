@@ -8,9 +8,10 @@ const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 
-const image_width: usize = 250;
-const aspect_ratio: f32 = 16.0 / 9.0;
-const samples_per_pixel = 100;
+const image_width: usize = 950;
+const aspect_ratio: f64 = 16.0 / 9.0;
+const samples_per_pixel = 400;
+const max_depth = 10;
 
 pub fn main() !void {
     // Allocation
@@ -60,10 +61,29 @@ pub fn main() !void {
     // -----------------------
     var world = try hittable.List.init(allocator);
     defer world.deinit(allocator);
-    try world.add(allocator, try hittable.Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2));
-    try world.add(allocator, try hittable.Sphere.init(allocator, Point3{ 0, -100.5, -1 }, 100));
+    try world.add(
+        allocator,
+        try hittable.Sphere.init(
+            allocator,
+            Point3{ 0, 0, -1 },
+            0.5,
+        ),
+    );
+    try world.add(
+        allocator,
+        try hittable.Sphere.init(
+            allocator,
+            Point3{ 0, -100.5, -1 },
+            100,
+        ),
+    );
     // -----------------------
-    const camera = Camera.init(image_width, aspect_ratio, samples_per_pixel);
+    const camera = Camera.init(
+        image_width,
+        aspect_ratio,
+        samples_per_pixel,
+        max_depth,
+    );
 
     try camera.render(&world, rand, f, stdout);
 

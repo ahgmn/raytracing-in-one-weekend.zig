@@ -6,12 +6,12 @@ const vec = @import("vector.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
-const Interval = @import("interval.zig").Interval(f32);
+const Interval = @import("interval.zig").Interval(f64);
 
 pub const HitRecord = struct {
     p: Point3,
     normal: Vec3,
-    t: f32,
+    t: f64,
     front_face: bool,
 
     /// note!: `outward_normal` is assumed to be a unit vector
@@ -76,7 +76,7 @@ pub const Object = struct {
 
 pub const Sphere = struct {
     center: Point3,
-    radius: f32,
+    radius: f64,
 
     fn hitFn(ptr: *anyopaque, ray: *const Ray, ray_t: Interval) ?HitRecord {
         const self: *Sphere = @ptrCast(@alignCast(ptr));
@@ -115,7 +115,7 @@ pub const Sphere = struct {
         allocator.destroy(self);
     }
 
-    pub fn init(allocator: std.mem.Allocator, center: Point3, radius: f32) !Object {
+    pub fn init(allocator: std.mem.Allocator, center: Point3, radius: f64) !Object {
         const s = try allocator.create(Sphere);
         const rad = @max(0, radius);
         s.* = Sphere{ .center = center, .radius = rad };

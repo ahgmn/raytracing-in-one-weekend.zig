@@ -8,9 +8,9 @@ const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 
-const image_width: usize = 950;
+const image_width: usize = 100;
 const aspect_ratio: f64 = 16.0 / 9.0;
-const samples_per_pixel = 400;
+const samples_per_pixel = 100;
 const max_depth = 10;
 
 pub fn main() !void {

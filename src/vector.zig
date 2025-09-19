@@ -30,6 +30,7 @@ pub inline fn dot(u: Vec3, v: Vec3) f64 {
 /// 2 3-dimensional vectors. The cross product can
 /// be expressed as the determinant of the 3x3
 /// matrix in the form:
+/// ```
 ///         +-----+-----+-----+
 ///         |  x  |  y  |  z  |
 ///         +-----+-----+-----+
@@ -37,6 +38,7 @@ pub inline fn dot(u: Vec3, v: Vec3) f64 {
 ///         +-----+-----+-----+
 ///         | v.x | v.y | v.z |
 ///         +-----+-----+-----+
+/// ```
 pub inline fn cross(u: Vec3, v: Vec3) Vec3 {
     return .{
         u[1] * v[2] - u[2] * v[1],

@@ -27,7 +27,7 @@ pub fn writeColor(color: Color3, writer: *std.Io.Writer) !void {
 /// `current` should be `max` when done
 pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, writer: *std.Io.Writer) !void {
     assert(current <= max);
-    const prog = std.math.clamp(mh.toF64(usize, current) / mh.toF64(usize, max), 0.0, 1.0);
+    const prog = std.math.clamp(mh.f64FromInt(current) / mh.f64FromInt(max), 0.0, 1.0);
 
     const empty_char = '.';
     const full_char = '#';
@@ -45,5 +45,4 @@ pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, wr
     try writer.writeByte(']');
 
     try writer.print(" [{}/{}]\r", .{ current, max });
-    try writer.flush();
 }

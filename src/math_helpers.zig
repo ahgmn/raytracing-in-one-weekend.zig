@@ -6,8 +6,8 @@ const Vec3 = Vector.Vec3;
 const Color3 = Vector.Color3;
 const Point3 = Vector.Point3;
 
-pub fn toF64(comptime T: type, from: T) f64 {
-    return @as(f64, @floatFromInt(from));
+pub inline fn f64FromInt(x: anytype) f64 {
+    return @as(f64, @floatFromInt(x));
 }
 
 pub const infinity = m.inf(f64);

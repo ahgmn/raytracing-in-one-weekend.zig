@@ -15,20 +15,31 @@ pub const HitRecord = struct {
     front_face: bool,
 
     /// note!: `outward_normal` is assumed to be a unit vector
-    pub fn setFaceNormal(self: *@This(), ray: *const Ray, outward_normal: *const Vec3) void {
-        self.front_face = vec.dot(ray.dir, outward_normal.*) < 0;
-        self.normal = if (self.front_face) outward_normal.* else -outward_normal.*;
+    pub fn setFaceNormal(
+        self: *@This(),
+        ray: *const Ray,
+        outward_normal: Vec3,
+    ) void {
+        self.front_face = vec.dot(ray.dir, outward_normal) < 0;
+        self.normal = if (self.front_face) outward_normal else -outward_normal;
     }
 };
 
 pub const List = struct {
     objects: std.ArrayList(Object),
 
-    pub fn hit(self: *const @This(), ray: *const Ray, ray_t: Interval) ?HitRecord {
+    pub fn hit(
+        self: *const @This(),
+        ray: *const Ray,
+        ray_t: Interval,
+    ) ?HitRecord {
         var record: ?HitRecord = null;
         var closest_so_far = ray_t.max;
         for (self.objects.items) |object| {
-            const temp_record = object.hit(ray, .{ .min = ray_t.min, .max = closest_so_far });
+            const temp_record = object.hit(
+                ray,
+                .{ .min = ray_t.min, .max = closest_so_far },
+            );
             if (temp_record) |rec| {
                 closest_so_far = rec.t;
                 record = rec;
@@ -44,12 +55,18 @@ pub const List = struct {
         self.objects.clearAndFree();
     }
 
-    pub fn add(self: *@This(), allocator: std.mem.Allocator, object: Object) !void {
+    pub fn add(
+        self: *@This(),
+        allocator: std.mem.Allocator,
+        object: Object,
+    ) !void {
         try self.objects.append(allocator, object);
     }
 
     pub fn init(allocator: std.mem.Allocator) !@This() {
-        return .{ .objects = try std.ArrayList(Object).initCapacity(allocator, 16) };
+        return .{
+            .objects = try std.ArrayList(Object).initCapacity(allocator, 16),
+        };
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
@@ -63,14 +80,14 @@ pub const List = struct {
 pub const Object = struct {
     ptr: *anyopaque,
     hitFn: *const fn (ptr: *anyopaque, ray: *const Ray, ray_t: Interval) ?HitRecord,
-    deinitFn: ?*const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
+    deinitFn: *const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
 
     pub fn hit(self: *const @This(), ray: *const Ray, ray_t: Interval) ?HitRecord {
         return self.hitFn(self.ptr, ray, ray_t);
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
-        if (self.deinitFn) |_deinitFn| _deinitFn(self.ptr, allocator);
+        self.deinitFn(self.ptr, allocator);
     }
 };
 
@@ -106,7 +123,7 @@ pub const Sphere = struct {
             .normal = (p - self.center) / vec.from(self.radius),
             .front_face = undefined,
         };
-        record.setFaceNormal(ray, &outward_normal);
+        record.setFaceNormal(ray, outward_normal);
         return record;
     }
 
@@ -115,7 +132,11 @@ pub const Sphere = struct {
         allocator.destroy(self);
     }
 
-    pub fn init(allocator: std.mem.Allocator, center: Point3, radius: f64) !Object {
+    pub fn init(
+        allocator: std.mem.Allocator,
+        center: Point3,
+        radius: f64,
+    ) !Object {
         const s = try allocator.create(Sphere);
         const rad = @max(0, radius);
         s.* = Sphere{ .center = center, .radius = rad };
@@ -128,11 +149,11 @@ test "sphere allocation" {
     defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
-    var hittable_list = List.init(allocator);
+    var hittable_list = try List.init(allocator);
     defer _ = hittable_list.deinit(allocator);
 
-    var s = Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2);
-    try hittable_list.add(&s);
+    const s = try Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2);
+    try hittable_list.add(allocator, s);
 
     std.debug.print("The sphere is: {}", .{hittable_list.objects.items[0]});
 }

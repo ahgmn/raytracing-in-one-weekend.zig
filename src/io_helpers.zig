@@ -25,6 +25,7 @@ pub fn writeColor(color: Color3, writer: *std.Io.Writer) !void {
 
 /// Write a simple progress bar to `writer`
 /// `current` should be `max` when done
+/// Example: `[#####......] [current/max]`
 pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, writer: *std.Io.Writer) !void {
     assert(current <= max);
     const prog = std.math.clamp(mh.f64FromInt(current) / mh.f64FromInt(max), 0.0, 1.0);

@@ -15,13 +15,14 @@ const max_depth = 10;
 
 pub fn main() !void {
     // Allocation
-    // -----------------------
+    // --------------------------------------------
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
-    // -----------------------
+    // --------------------------------------------
+
     // Printing
-    // -----------------------
+    // --------------------------------------------
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
@@ -29,9 +30,10 @@ pub fn main() !void {
     var stderr_buffer: [1024]u8 = undefined;
     var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
     const stderr = &stderr_writer.interface;
-    // -----------------------
+    // --------------------------------------------
+
     // File
-    // -----------------------
+    // --------------------------------------------
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
     if (args.len < 2) {
@@ -47,18 +49,20 @@ pub fn main() !void {
     var file_buffer: [1024]u8 = undefined;
     var file_writer = file.writer(&file_buffer);
     const f = &file_writer.interface;
-    // -----------------------
+    // --------------------------------------------
+
     // Random
-    // -----------------------
+    // --------------------------------------------
     var prng = std.Random.DefaultPrng.init(blk: {
         var seed: u64 = undefined;
         try std.posix.getrandom(std.mem.asBytes(&seed));
         break :blk seed;
     });
     const rand = prng.random();
-    // -----------------------
+    // --------------------------------------------
+
     // World
-    // -----------------------
+    // --------------------------------------------
     var world = try hittable.List.init(allocator);
     defer world.deinit(allocator);
     try world.add(
@@ -77,7 +81,8 @@ pub fn main() !void {
             100,
         ),
     );
-    // -----------------------
+    // --------------------------------------------
+
     const camera = Camera.init(
         image_width,
         aspect_ratio,

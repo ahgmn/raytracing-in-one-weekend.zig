@@ -7,7 +7,7 @@ pub const Color3 = Vec3;
 pub const Point3 = Vec3;
 
 pub inline fn from(t: f64) Vec3 {
-    return @as(Vec3, @splat(t));
+    return @splat(t);
 }
 
 pub inline fn lenSquared(vec: Vec3) f64 {
@@ -75,11 +75,11 @@ pub inline fn randomUnit(rand: std.Random) Vec3 {
 }
 
 pub inline fn randomOnHemisphere(normal: Vec3, rand: std.Random) Vec3 {
-    const onUnitSphere = randomUnit(rand);
-    if (dot(onUnitSphere, normal) > 0.0) {
-        return onUnitSphere;
+    const on_unit_sphere = randomUnit(rand);
+    if (dot(on_unit_sphere, normal) > 0.0) {
+        return on_unit_sphere;
     } else {
-        return -onUnitSphere;
+        return -on_unit_sphere;
     }
 }
 

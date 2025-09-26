@@ -7,13 +7,13 @@ const Color3 = Vector.Color3;
 const Point3 = Vector.Point3;
 
 pub inline fn f64FromInt(x: anytype) f64 {
-    return @as(f64, @floatFromInt(x));
+    return @floatFromInt(x);
 }
 
 pub const infinity = m.inf(f64);
 
 pub inline fn clampToU8(comptime T: type, from: T) u8 {
-    return @as(u8, @intFromFloat(m.clamp(from, 0.0, 1.0) * 255.999));
+    return @intFromFloat(m.clamp(from, 0.0, 1.0) * 255.999);
 }
 
 pub inline fn randomInRange(min: f64, max: f64, rand: std.Random) f64 {

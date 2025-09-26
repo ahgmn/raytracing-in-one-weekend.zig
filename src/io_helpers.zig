@@ -16,9 +16,9 @@ pub fn writeColor(color: Color3, writer: *std.Io.Writer) !void {
 
     const intensity: Interval = .{ .min = 0.0, .max = 0.999 };
 
-    const rU8: u8 = @as(u8, @intFromFloat(256 * intensity.clamp(r)));
-    const gU8: u8 = @as(u8, @intFromFloat(256 * intensity.clamp(g)));
-    const bU8: u8 = @as(u8, @intFromFloat(256 * intensity.clamp(b)));
+    const rU8: u8 = @intFromFloat(256 * intensity.clamp(r));
+    const gU8: u8 = @intFromFloat(256 * intensity.clamp(g));
+    const bU8: u8 = @intFromFloat(256 * intensity.clamp(b));
 
     try writer.print("{} {} {}\n", .{ rU8, gU8, bU8 });
 }
@@ -34,7 +34,7 @@ pub fn writeProgressBar(current: usize, max: usize, comptime bar_length: u32, wr
     const full_char = '#';
 
     const bar_char_amount = bar_length - 2;
-    const hash_count = @as(usize, @intFromFloat(@floor(bar_char_amount * prog)));
+    const hash_count: usize = @intFromFloat(@floor(bar_char_amount * prog));
 
     try writer.writeByte('[');
     for (0..hash_count) |_| {

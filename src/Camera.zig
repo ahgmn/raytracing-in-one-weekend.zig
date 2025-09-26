@@ -54,8 +54,8 @@ pub fn init(
     samples_per_pixel: u32,
     max_depth: usize,
 ) @This() {
-    const image_height =
-        @as(usize, @intFromFloat(mh.f64FromInt(image_width) / aspect_ratio));
+    const image_height: usize =
+        @intFromFloat(mh.f64FromInt(image_width) / aspect_ratio);
 
     const focal_length = 1.0;
 

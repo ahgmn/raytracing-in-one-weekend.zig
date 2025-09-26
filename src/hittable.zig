@@ -8,6 +8,54 @@ const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 const Interval = @import("interval.zig").Interval(f64);
 
+pub const Object = union(enum) {
+    sphere: Sphere,
+
+    fn hit(self: *const Object, ray: *const Ray, ray_t: Interval) ?HitRecord {
+        switch (self.*) {
+            .sphere => |sphere| {
+                return sphere.hit(ray, ray_t);
+            },
+        }
+    }
+};
+
+pub const Sphere = struct {
+    center: Point3,
+    radius: f64,
+
+    pub fn hit(self: *const Sphere, ray: *const Ray, ray_t: Interval) ?HitRecord {
+        const oc = self.center - ray.orig;
+        const a = vec.lenSquared(ray.dir);
+        const h = vec.dot(ray.dir, oc);
+        const c = vec.lenSquared(oc) - self.radius * self.radius;
+        const discriminant = h * h - a * c;
+        if (discriminant < 0) {
+            return null;
+        }
+        const sqrtd = @sqrt(discriminant);
+
+        var root = (h - sqrtd) / a;
+        if (!ray_t.surrounds(root)) {
+            root = (h + sqrtd) / a;
+            if (!ray_t.surrounds(root)) {
+                return null;
+            }
+        }
+
+        const p = ray.at(root);
+        const outward_normal = (p - self.center) / vec.from(self.radius);
+        var record = HitRecord{
+            .t = root,
+            .p = p,
+            .normal = (p - self.center) / vec.from(self.radius),
+            .front_face = undefined,
+        };
+        record.setFaceNormal(ray, outward_normal);
+        return record;
+    }
+};
+
 pub const HitRecord = struct {
     p: Point3,
     normal: Vec3,
@@ -48,10 +96,7 @@ pub const List = struct {
         return record;
     }
 
-    pub fn clearAndFree(self: *@This()) !void {
-        for (self.objects.items) |object| {
-            object.deinit(self.objects.allocator);
-        }
+    pub fn clearAndFree(self: @This()) !void {
         self.objects.clearAndFree();
     }
 
@@ -70,77 +115,7 @@ pub const List = struct {
     }
 
     pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
-        for (self.objects.items) |*object| {
-            object.deinit(allocator);
-        }
         self.objects.deinit(allocator);
-    }
-};
-
-pub const Object = struct {
-    ptr: *anyopaque,
-    hitFn: *const fn (ptr: *anyopaque, ray: *const Ray, ray_t: Interval) ?HitRecord,
-    deinitFn: *const fn (ptr: *anyopaque, allocator: std.mem.Allocator) void,
-
-    pub fn hit(self: *const @This(), ray: *const Ray, ray_t: Interval) ?HitRecord {
-        return self.hitFn(self.ptr, ray, ray_t);
-    }
-
-    pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
-        self.deinitFn(self.ptr, allocator);
-    }
-};
-
-pub const Sphere = struct {
-    center: Point3,
-    radius: f64,
-
-    fn hitFn(ptr: *anyopaque, ray: *const Ray, ray_t: Interval) ?HitRecord {
-        const self: *Sphere = @ptrCast(@alignCast(ptr));
-        const oc = self.center - ray.orig;
-        const a = vec.lenSquared(ray.dir);
-        const h = vec.dot(ray.dir, oc);
-        const c = vec.lenSquared(oc) - self.radius * self.radius;
-        const discriminant = h * h - a * c;
-        if (discriminant < 0) {
-            return null;
-        }
-        const sqrtd = @sqrt(discriminant);
-
-        var root = (h - sqrtd) / a;
-        if (!ray_t.surrounds(root)) {
-            root = (h + sqrtd) / a;
-            if (!ray_t.surrounds(root)) {
-                return null;
-            }
-        }
-
-        const p = ray.at(root);
-        const outward_normal = (p - self.center) / vec.from(self.radius);
-        var record = HitRecord{
-            .t = root,
-            .p = p,
-            .normal = (p - self.center) / vec.from(self.radius),
-            .front_face = undefined,
-        };
-        record.setFaceNormal(ray, outward_normal);
-        return record;
-    }
-
-    fn deinitFn(ptr: *anyopaque, allocator: std.mem.Allocator) void {
-        const self: *Sphere = @ptrCast(@alignCast(ptr));
-        allocator.destroy(self);
-    }
-
-    pub fn init(
-        allocator: std.mem.Allocator,
-        center: Point3,
-        radius: f64,
-    ) !Object {
-        const s = try allocator.create(Sphere);
-        const rad = @max(0, radius);
-        s.* = Sphere{ .center = center, .radius = rad };
-        return .{ .ptr = s, .hitFn = hitFn, .deinitFn = deinitFn };
     }
 };
 
@@ -150,10 +125,10 @@ test "sphere allocation" {
     const allocator = debug_allocator.allocator();
 
     var hittable_list = try List.init(allocator);
-    defer _ = hittable_list.deinit(allocator);
+    defer hittable_list.deinit(allocator);
 
-    const s = try Sphere.init(allocator, Point3{ 0, 0, -1 }, 0.2);
+    const s = Object{ .sphere = .{ .center = Point3{ 0, 0, -1 }, .radius = 1 } };
     try hittable_list.add(allocator, s);
 
-    std.debug.print("The sphere is: {}", .{hittable_list.objects.items[0]});
+    std.debug.assert(hittable_list.objects.items[0].sphere.radius == 1);
 }

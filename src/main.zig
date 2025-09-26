@@ -65,21 +65,18 @@ pub fn main() !void {
     // --------------------------------------------
     var world = try hittable.List.init(allocator);
     defer world.deinit(allocator);
+
     try world.add(
         allocator,
-        try hittable.Sphere.init(
-            allocator,
-            Point3{ 0, 0, -1 },
-            0.5,
-        ),
+        hittable.Object{
+            .sphere = .{ .center = Point3{ 0, 0, -1 }, .radius = 0.5 },
+        },
     );
     try world.add(
         allocator,
-        try hittable.Sphere.init(
-            allocator,
-            Point3{ 0, -100.5, -1 },
-            100,
-        ),
+        hittable.Object{
+            .sphere = .{ .center = Point3{ 0, -100.5, -1 }, .radius = 100 },
+        },
     );
     // --------------------------------------------
 
@@ -98,5 +95,5 @@ pub fn main() !void {
 }
 
 test {
-    std.testing.refAllDecls(@This());
+    std.testing.refAllDeclsRecursive(@This());
 }

@@ -1,4 +1,3 @@
-//! TODO: Docstring
 const std = @import("std");
 
 const Ray = @import("Ray.zig");
@@ -7,6 +6,7 @@ const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 const Interval = @import("interval.zig").Interval(f64);
+const material = @import("material.zig");
 
 pub const Object = union(enum) {
     sphere: Sphere,
@@ -23,6 +23,7 @@ pub const Object = union(enum) {
 pub const Sphere = struct {
     center: Point3,
     radius: f64,
+    mat: *material.Material,
 
     pub fn hit(self: *const Sphere, ray: *const Ray, ray_t: Interval) ?HitRecord {
         const oc = self.center - ray.orig;
@@ -50,6 +51,7 @@ pub const Sphere = struct {
             .p = p,
             .normal = (p - self.center) / vec.from(self.radius),
             .front_face = undefined,
+            .mat = self.mat,
         };
         record.setFaceNormal(ray, outward_normal);
         return record;
@@ -59,11 +61,12 @@ pub const Sphere = struct {
 pub const HitRecord = struct {
     p: Point3,
     normal: Vec3,
+    mat: *material.Material,
     t: f64,
     front_face: bool,
 
     /// note!: `outward_normal` is assumed to be a unit vector
-    pub fn setFaceNormal(
+    fn setFaceNormal(
         self: *@This(),
         ray: *const Ray,
         outward_normal: Vec3,

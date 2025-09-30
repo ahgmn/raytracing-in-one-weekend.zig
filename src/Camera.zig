@@ -116,13 +116,11 @@ fn rayColor(
 
     const hit_record = world.hit(ray, .{ .min = 0.001, .max = mh.infinity });
     if (hit_record) |rec| {
-        const direction = rec.normal + vec.randomUnit(rand);
-        return vec.from(0.5) * rayColor(
-            &Ray.new(rec.p, direction),
-            depth - 1,
-            world,
-            rand,
-        );
+        if (rec.mat.scatter(ray, &rec, rand)) |scatter_result| {
+            const scattered, const attenuation = scatter_result;
+            return attenuation * rayColor(&scattered, depth - 1, world, rand);
+        }
+        return .{ 0, 0, 0 };
     }
     const unit_direction = vec.unit(ray.dir);
     const a = 0.5 * (unit_direction[1] + 1.0);

@@ -4,13 +4,14 @@ const assert = std.debug.assert;
 const Camera = @import("Camera.zig");
 const hittable = @import("hittable.zig");
 const vec = @import("vector.zig");
+const material = @import("material.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 
-const image_width: usize = 100;
+const image_width: usize = 900;
 const aspect_ratio: f64 = 16.0 / 9.0;
-const samples_per_pixel = 100;
+const samples_per_pixel = 400;
 const max_depth = 10;
 
 pub fn main() !void {
@@ -66,16 +67,57 @@ pub fn main() !void {
     var world = try hittable.List.init(allocator);
     defer world.deinit(allocator);
 
+    var material_ground: material.Material = .{
+        .lambertian = .{ .albedo = .{ 0.8, 0.8, 0.0 } },
+    };
+    var material_center: material.Material = .{
+        .lambertian = .{ .albedo = .{ 0.1, 0.2, 0.5 } },
+    };
+    var material_left: material.Material = .{
+        .metal = .{ .albedo = .{ 0.8, 0.8, 0.8 } },
+    };
+    var material_right: material.Material = .{
+        .metal = .{ .albedo = .{ 0.8, 0.6, 0.2 } },
+    };
+
     try world.add(
         allocator,
         hittable.Object{
-            .sphere = .{ .center = Point3{ 0, 0, -1 }, .radius = 0.5 },
+            .sphere = .{
+                .center = Point3{ 0, -100.5, -1 },
+                .radius = 100,
+                .mat = &material_ground,
+            },
         },
     );
     try world.add(
         allocator,
         hittable.Object{
-            .sphere = .{ .center = Point3{ 0, -100.5, -1 }, .radius = 100 },
+            .sphere = .{
+                .center = Point3{ 0.0, 0.0, -1.2 },
+                .radius = 0.5,
+                .mat = &material_center,
+            },
+        },
+    );
+    try world.add(
+        allocator,
+        hittable.Object{
+            .sphere = .{
+                .center = Point3{ -1.0, 0.0, -1.0 },
+                .radius = 0.5,
+                .mat = &material_left,
+            },
+        },
+    );
+    try world.add(
+        allocator,
+        hittable.Object{
+            .sphere = .{
+                .center = Point3{ 1.0, 0.0, -1.0 },
+                .radius = 0.5,
+                .mat = &material_right,
+            },
         },
     );
     // --------------------------------------------

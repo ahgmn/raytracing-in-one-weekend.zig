@@ -48,12 +48,12 @@ pub inline fn cross(u: Vec3, v: Vec3) Vec3 {
 }
 
 pub inline fn reflect(v: Vec3, n: Vec3) Vec3 {
-    return v - 2 * dot(v, n) * n;
+    return v - from(2) * from(dot(v, n)) * n;
 }
 
 pub inline fn nearZero(v: Vec3) bool {
     const s = 1e-8;
-    return @abs(v) < from(s);
+    return @reduce(.And, @abs(v) < from(s));
 }
 
 pub inline fn random(rand: std.Random) Vec3 {

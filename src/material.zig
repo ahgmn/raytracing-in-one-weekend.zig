@@ -12,7 +12,7 @@ pub const Material = union(enum) {
     lambertian: Lambertian,
     metal: Metal,
 
-    pub fn scatter(
+    pub inline fn scatter(
         self: *const @This(),
         ray_in: *const Ray,
         hit_record: *const hittable.HitRecord,
@@ -32,7 +32,7 @@ pub const Material = union(enum) {
 pub const Lambertian = struct {
     albedo: Color3,
 
-    pub fn scatter(
+    pub inline fn scatter(
         self: *const @This(),
         ray_in: *const Ray,
         hit_record: *const hittable.HitRecord,
@@ -52,7 +52,7 @@ pub const Lambertian = struct {
 pub const Metal = struct {
     albedo: Color3,
 
-    pub fn scatter(
+    pub inline fn scatter(
         self: *const @This(),
         ray_in: *const Ray,
         hit_record: *const hittable.HitRecord,

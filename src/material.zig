@@ -11,6 +11,7 @@ const hittable = @import("hittable.zig");
 pub const Material = union(enum) {
     lambertian: Lambertian,
     metal: Metal,
+    dielectric: Dielectric,
 
     pub inline fn scatter(
         self: *const @This(),
@@ -24,6 +25,9 @@ pub const Material = union(enum) {
             },
             .metal => |metal| {
                 return metal.scatter(ray_in, hit_record, rand);
+            },
+            .dielectric => |dielectric| {
+                return dielectric.scatter(ray_in, hit_record, rand);
             },
         }
     }
@@ -68,5 +72,30 @@ pub const Metal = struct {
         if (vec.dot(scattered.dir, hit_record.normal) > 0)
             return .{ scattered, attenuation };
         return null;
+    }
+};
+
+pub const Dielectric = struct {
+    refraction_index: f64,
+
+    pub inline fn scatter(
+        self: *const @This(),
+        ray_in: *const Ray,
+        hit_record: *const hittable.HitRecord,
+        rand: std.Random,
+    ) ?struct { Ray, Color3 } {
+        _ = rand;
+        const attenuation = Color3{ 1, 1, 1 };
+        const ri = blk: {
+            break :blk if (hit_record.front_face)
+                1.0 / self.refraction_index
+            else
+                self.refraction_index;
+        };
+        const unit_direction = vec.unit(ray_in.dir);
+        const refracted = vec.refract(unit_direction, hit_record.normal, ri);
+        const scattered = Ray.new(hit_record.p, refracted);
+
+        return .{ scattered, attenuation };
     }
 };

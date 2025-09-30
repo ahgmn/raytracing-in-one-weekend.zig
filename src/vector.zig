@@ -51,6 +51,14 @@ pub inline fn reflect(v: Vec3, n: Vec3) Vec3 {
     return v - from(2) * from(dot(v, n)) * n;
 }
 
+pub inline fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64) Vec3 {
+    const cos_theta = @min(dot(-uv, n), 1.0);
+    const etai_over_etat_v = from(etai_over_etat);
+    const r_out_perp = etai_over_etat_v * (uv + from(cos_theta) * n);
+    const r_out_parallel = from(-@sqrt(@abs(1.0 - lenSquared(r_out_perp)))) * n;
+    return r_out_perp + r_out_parallel;
+}
+
 pub inline fn nearZero(v: Vec3) bool {
     const s = 1e-8;
     return @reduce(.And, @abs(v) < from(s));

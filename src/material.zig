@@ -93,8 +93,19 @@ pub const Dielectric = struct {
                 self.refraction_index;
         };
         const unit_direction = vec.unit(ray_in.dir);
-        const refracted = vec.refract(unit_direction, hit_record.normal, ri);
-        const scattered = Ray.new(hit_record.p, refracted);
+
+        const cos_theta = @min(vec.dot(-unit_direction, hit_record.normal), 1.0);
+        const sin_theta = @sqrt(1.0 - cos_theta * cos_theta);
+
+        const cannot_refract = ri * sin_theta > 1.0;
+        const direction = blk: {
+            break :blk if (cannot_refract)
+                vec.reflect(unit_direction, hit_record.normal)
+            else
+                vec.refract(unit_direction, hit_record.normal, ri);
+        };
+
+        const scattered = Ray.new(hit_record.p, direction);
 
         return .{ scattered, attenuation };
     }

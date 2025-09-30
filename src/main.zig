@@ -76,6 +76,11 @@ pub fn main() !void {
     var material_left: material.Material = .{
         .dielectric = .{ .refraction_index = 1.5 },
     };
+    var material_bubble: material.Material = .{
+        .dielectric = .{
+            .refraction_index = 1.0 / material_left.dielectric.refraction_index,
+        },
+    };
     var material_right: material.Material = .{
         .metal = .{ .albedo = .{ 0.8, 0.6, 0.2 }, .fuzz = 1.0 },
     };
@@ -107,6 +112,16 @@ pub fn main() !void {
                 .center = Point3{ -1.0, 0.0, -1.0 },
                 .radius = 0.5,
                 .mat = &material_left,
+            },
+        },
+    );
+    try world.add(
+        allocator,
+        hittable.Object{
+            .sphere = .{
+                .center = Point3{ -1.0, 0.0, -1.0 },
+                .radius = 0.4,
+                .mat = &material_bubble,
             },
         },
     );

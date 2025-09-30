@@ -84,7 +84,6 @@ pub const Dielectric = struct {
         hit_record: *const hittable.HitRecord,
         rand: std.Random,
     ) ?struct { Ray, Color3 } {
-        _ = rand;
         const attenuation = Color3{ 1, 1, 1 };
         const ri = blk: {
             break :blk if (hit_record.front_face)
@@ -99,7 +98,9 @@ pub const Dielectric = struct {
 
         const cannot_refract = ri * sin_theta > 1.0;
         const direction = blk: {
-            break :blk if (cannot_refract)
+            const should_reflect: bool = cannot_refract or
+                (reflectance(cos_theta, ri) > rand.float(f64));
+            break :blk if (should_reflect)
                 vec.reflect(unit_direction, hit_record.normal)
             else
                 vec.refract(unit_direction, hit_record.normal, ri);
@@ -108,5 +109,14 @@ pub const Dielectric = struct {
         const scattered = Ray.new(hit_record.p, direction);
 
         return .{ scattered, attenuation };
+    }
+
+    inline fn reflectance(
+        cosine: f64,
+        refraction_index: f64,
+    ) f64 {
+        var r0 = (1 - refraction_index) / (1 + refraction_index);
+        r0 = r0 * r0;
+        return (r0 + (1 - r0) * std.math.pow(f64, (1 - cosine), 5));
     }
 };

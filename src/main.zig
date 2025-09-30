@@ -74,10 +74,10 @@ pub fn main() !void {
         .lambertian = .{ .albedo = .{ 0.1, 0.2, 0.5 } },
     };
     var material_left: material.Material = .{
-        .metal = .{ .albedo = .{ 0.8, 0.8, 0.8 } },
+        .metal = .{ .albedo = .{ 0.8, 0.8, 0.8 }, .fuzz = 0.3 },
     };
     var material_right: material.Material = .{
-        .metal = .{ .albedo = .{ 0.8, 0.6, 0.2 } },
+        .metal = .{ .albedo = .{ 0.8, 0.6, 0.2 }, .fuzz = 1.0 },
     };
 
     try world.add(

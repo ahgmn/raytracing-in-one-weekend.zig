@@ -120,6 +120,7 @@ fn rayColor(
             const scattered, const attenuation = scatter_result;
             return attenuation * rayColor(&scattered, depth - 1, world, rand);
         }
+        return .{ 0, 0, 0 };
     }
     const unit_direction = vec.unit(ray.dir);
     const a = 0.5 * (unit_direction[1] + 1.0);

@@ -51,6 +51,8 @@ pub const Lambertian = struct {
 
 pub const Metal = struct {
     albedo: Color3,
+    /// assumed to be under 1
+    fuzz: f64,
 
     pub inline fn scatter(
         self: *const @This(),
@@ -58,10 +60,13 @@ pub const Metal = struct {
         hit_record: *const hittable.HitRecord,
         rand: std.Random,
     ) ?struct { Ray, Color3 } {
-        _ = rand;
-        const reflected = vec.reflect(ray_in.dir, hit_record.normal);
+        var reflected = vec.reflect(ray_in.dir, hit_record.normal);
+        reflected = vec.unit(reflected) +
+            (vec.from(self.fuzz) * vec.randomUnit(rand));
         const scattered = Ray.new(hit_record.p, reflected);
         const attenuation = self.albedo;
-        return .{ scattered, attenuation };
+        if (vec.dot(scattered.dir, hit_record.normal) > 0)
+            return .{ scattered, attenuation };
+        return null;
     }
 };

@@ -96,7 +96,7 @@ pub fn init(
         const half_viewport_u = (viewport_u / vec.from(2));
         const half_viewport_v = (viewport_v / vec.from(2));
         const viewport_offset = half_viewport_u + half_viewport_v;
-        const focal_length_w = focal_length * w;
+        const focal_length_w = vec.from(focal_length) * w;
         break :blk camera_center - focal_length_w - viewport_offset;
     };
 

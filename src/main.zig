@@ -13,7 +13,10 @@ const image_width: usize = 900;
 const aspect_ratio: f64 = 16.0 / 9.0;
 const samples_per_pixel = 400;
 const max_depth = 10;
-const vfov = 90.0;
+const vfov = 20.0;
+const lookfrom = Point3{ -2, 2, 1 };
+const lookat = Point3{ 0, 0, -1 };
+const vup = Vec3{ 0, 1, 0 };
 
 pub fn main() !void {
     // Allocation
@@ -68,20 +71,50 @@ pub fn main() !void {
     var world = try hittable.List.init(allocator);
     defer world.deinit(allocator);
 
+    var material_ground: material.Material = .{
+        .lambertian = .{ .albedo = .{ 0.8, 0.8, 0.0 } },
+    };
+    var material_center: material.Material = .{
+        .lambertian = .{ .albedo = .{ 0.1, 0.2, 0.5 } },
+    };
     var material_left: material.Material = .{
-        .lambertian = .{ .albedo = .{ 0, 0, 1 } },
+        .dielectric = .{ .refraction_index = 1.5 },
+    };
+    var material_bubble: material.Material = .{
+        .dielectric = .{
+            .refraction_index = 1.0 / material_left.dielectric.refraction_index,
+        },
     };
     var material_right: material.Material = .{
-        .lambertian = .{ .albedo = .{ 1, 0, 0 } },
+        .metal = .{ .albedo = .{ 0.8, 0.6, 0.2 }, .fuzz = 1.0 },
     };
 
-    const r = @cos(std.math.pi / 4.0);
     try world.add(
         allocator,
         hittable.Object{
             .sphere = .{
-                .center = Point3{ -r, 0.0, -1.0 },
-                .radius = r,
+                .center = Point3{ 0, -100.5, -1 },
+                .radius = 100,
+                .mat = &material_ground,
+            },
+        },
+    );
+    try world.add(
+        allocator,
+        hittable.Object{
+            .sphere = .{
+                .center = Point3{ 0.0, 0.0, -1.2 },
+                .radius = 0.5,
+                .mat = &material_center,
+            },
+        },
+    );
+    try world.add(
+        allocator,
+        hittable.Object{
+            .sphere = .{
+                .center = Point3{ -1.0, 0.0, -1.0 },
+                .radius = 0.5,
                 .mat = &material_left,
             },
         },
@@ -90,8 +123,18 @@ pub fn main() !void {
         allocator,
         hittable.Object{
             .sphere = .{
-                .center = Point3{ r, 0.0, -1.0 },
-                .radius = r,
+                .center = Point3{ -1.0, 0.0, -1.0 },
+                .radius = 0.4,
+                .mat = &material_bubble,
+            },
+        },
+    );
+    try world.add(
+        allocator,
+        hittable.Object{
+            .sphere = .{
+                .center = Point3{ 1.0, 0.0, -1.0 },
+                .radius = 0.5,
                 .mat = &material_right,
             },
         },
@@ -104,6 +147,9 @@ pub fn main() !void {
         samples_per_pixel,
         max_depth,
         vfov,
+        lookfrom,
+        lookat,
+        vup,
     );
 
     try camera.render(&world, rand, f, stdout);

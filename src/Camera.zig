@@ -25,6 +25,10 @@ vup: Vec3,
 u: Vec3,
 v: Vec3,
 w: Vec3,
+defocus_angle: f64,
+focus_dist: f64,
+defocus_disk_u: Vec3,
+defocus_disk_v: Vec3,
 
 pub fn render(
     self: *const @This(),
@@ -64,6 +68,8 @@ pub fn init(
     lookfrom: Point3,
     lookat: Point3,
     vup: Vec3,
+    defocus_angle: f64,
+    focus_dist: f64,
 ) @This() {
     const image_width_f: f64 = @floatFromInt(image_width);
     const image_height: usize =
@@ -71,11 +77,10 @@ pub fn init(
 
     const camera_center: Point3 = lookfrom;
 
-    const focal_length = vec.len(lookfrom - lookat);
     const theta = mh.degreesToRadians(vfov);
     const h = @tan(theta / 2);
 
-    const viewport_height = 2.0 * h * focal_length;
+    const viewport_height = 2.0 * h * focus_dist;
     const viewport_width: f64 = blk: {
         const image_height_f: f64 = @floatFromInt(image_height);
         const new_aspect_ratio = image_width_f / image_height_f;
@@ -96,9 +101,13 @@ pub fn init(
         const half_viewport_u = (viewport_u / vec.from(2));
         const half_viewport_v = (viewport_v / vec.from(2));
         const viewport_offset = half_viewport_u + half_viewport_v;
-        const focal_length_w = vec.from(focal_length) * w;
+        const focal_length_w = vec.from(focus_dist) * w;
         break :blk camera_center - focal_length_w - viewport_offset;
     };
+
+    const defocus_radius = focus_dist * @tan(mh.degreesToRadians(defocus_angle / 2.0));
+    const defocus_disk_u = u * vec.from(defocus_radius);
+    const defocus_disk_v = v * vec.from(defocus_radius);
 
     const pixel00_loc = blk: {
         const pixel_delta = (pixel_delta_u + pixel_delta_v) * vec.from(0.5);
@@ -128,6 +137,10 @@ pub fn init(
         .u = u,
         .v = v,
         .w = w,
+        .defocus_angle = defocus_angle,
+        .focus_dist = focus_dist,
+        .defocus_disk_u = defocus_disk_u,
+        .defocus_disk_v = defocus_disk_v,
     };
 }
 
@@ -173,9 +186,20 @@ inline fn getRay(
         const v = vec.from(row_f_offset) * self.pixel_delta_v;
         break :blk self.pixel00_loc + u + v;
     };
-    const ray_origin = self.center;
+    const ray_origin = if (self.defocus_angle <= 0)
+        self.center
+    else
+        self.defocusDiskSample(rand);
+
     const ray_direction = pixel_sample - ray_origin;
     return Ray.new(ray_origin, ray_direction);
+}
+
+inline fn defocusDiskSample(self: *const @This(), rand: std.Random) Point3 {
+    const p = vec.randomInUnitDisk(rand);
+    return self.center +
+        (vec.from(p[0]) * self.defocus_disk_u) +
+        (vec.from(p[1]) * self.defocus_disk_v);
 }
 
 /// Return a random 2D offset in [-0.5, 0.5], as a Vec3 with z = 0

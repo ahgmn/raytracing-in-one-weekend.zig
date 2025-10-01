@@ -100,6 +100,13 @@ pub inline fn randomOnHemisphere(normal: Vec3, rand: std.Random) Vec3 {
     }
 }
 
+pub inline fn randomInUnitDisk(rand: std.Random) Vec3 {
+    while (true) {
+        const p = Vec3{ rand.float(f64) * 2 - 1, rand.float(f64) * 2 - 1, 0 };
+        if (lenSquared(p) < 1) return p;
+    }
+}
+
 test "vector dot product" {
     const a = Vec3{ 2, 4, 6 };
     const b = Vec3{ 1, -2, 3 };

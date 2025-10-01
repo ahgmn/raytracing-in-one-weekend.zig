@@ -18,6 +18,13 @@ aspect_ratio: f64,
 samples_per_pixel: usize,
 pixel_samples_scale: f64,
 max_depth: usize,
+vfov: f64,
+lookfrom: Point3,
+lookat: Point3,
+vup: Vec3,
+u: Vec3,
+v: Vec3,
+w: Vec3,
 
 pub fn render(
     self: *const @This(),
@@ -53,24 +60,34 @@ pub fn init(
     aspect_ratio: f64,
     samples_per_pixel: u32,
     max_depth: usize,
+    vfov: f64,
+    lookfrom: Point3,
+    lookat: Point3,
+    vup: Vec3,
 ) @This() {
     const image_width_f: f64 = @floatFromInt(image_width);
     const image_height: usize =
         @intFromFloat(@divTrunc(image_width_f, aspect_ratio));
 
-    const focal_length = 1.0;
+    const camera_center: Point3 = lookfrom;
 
-    const viewport_height = 2.0;
+    const focal_length = vec.len(lookfrom - lookat);
+    const theta = mh.degreesToRadians(vfov);
+    const h = @tan(theta / 2);
+
+    const viewport_height = 2.0 * h * focal_length;
     const viewport_width: f64 = blk: {
         const image_height_f: f64 = @floatFromInt(image_height);
         const new_aspect_ratio = image_width_f / image_height_f;
         break :blk viewport_height * new_aspect_ratio;
     };
 
-    const camera_center: Point3 = .{ 0, 0, 0 };
+    const w = vec.unit(lookfrom - lookat);
+    const u = vec.unit(vec.cross(vup, w));
+    const v = vec.cross(w, u);
 
-    const viewport_u: Vec3 = .{ viewport_width, 0, 0 };
-    const viewport_v: Vec3 = .{ 0, -viewport_height, 0 };
+    const viewport_u: Vec3 = vec.from(viewport_width) * u;
+    const viewport_v: Vec3 = vec.from(viewport_height) * (-v);
 
     const pixel_delta_u = viewport_u / vec.from(@floatFromInt(image_width));
     const pixel_delta_v = viewport_v / vec.from(@floatFromInt(image_height));
@@ -79,7 +96,8 @@ pub fn init(
         const half_viewport_u = (viewport_u / vec.from(2));
         const half_viewport_v = (viewport_v / vec.from(2));
         const viewport_offset = half_viewport_u + half_viewport_v;
-        break :blk camera_center - Vec3{ 0, 0, focal_length } - viewport_offset;
+        const focal_length_w = vec.from(focal_length) * w;
+        break :blk camera_center - focal_length_w - viewport_offset;
     };
 
     const pixel00_loc = blk: {
@@ -103,6 +121,13 @@ pub fn init(
         .samples_per_pixel = samples_per_pixel,
         .pixel_samples_scale = pixel_samples_scale,
         .max_depth = max_depth,
+        .vfov = vfov,
+        .lookat = lookat,
+        .lookfrom = lookfrom,
+        .vup = vup,
+        .u = u,
+        .v = v,
+        .w = w,
     };
 }
 

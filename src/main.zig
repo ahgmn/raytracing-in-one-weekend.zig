@@ -13,6 +13,10 @@ const image_width: usize = 900;
 const aspect_ratio: f64 = 16.0 / 9.0;
 const samples_per_pixel = 400;
 const max_depth = 10;
+const vfov = 20.0;
+const lookfrom = Point3{ -2, 2, 1 };
+const lookat = Point3{ 0, 0, -1 };
+const vup = Vec3{ 0, 1, 0 };
 
 pub fn main() !void {
     // Allocation
@@ -142,6 +146,10 @@ pub fn main() !void {
         aspect_ratio,
         samples_per_pixel,
         max_depth,
+        vfov,
+        lookfrom,
+        lookat,
+        vup,
     );
 
     try camera.render(&world, rand, f, stdout);

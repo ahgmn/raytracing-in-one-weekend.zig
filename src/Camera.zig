@@ -18,6 +18,7 @@ aspect_ratio: f64,
 samples_per_pixel: usize,
 pixel_samples_scale: f64,
 max_depth: usize,
+vfov: f64,
 
 pub fn render(
     self: *const @This(),
@@ -53,14 +54,17 @@ pub fn init(
     aspect_ratio: f64,
     samples_per_pixel: u32,
     max_depth: usize,
+    vfov: f64,
 ) @This() {
     const image_width_f: f64 = @floatFromInt(image_width);
     const image_height: usize =
         @intFromFloat(@divTrunc(image_width_f, aspect_ratio));
 
     const focal_length = 1.0;
+    const theta = mh.degreesToRadians(vfov);
+    const h = @tan(theta / 2);
 
-    const viewport_height = 2.0;
+    const viewport_height = 2.0 * h * focal_length;
     const viewport_width: f64 = blk: {
         const image_height_f: f64 = @floatFromInt(image_height);
         const new_aspect_ratio = image_width_f / image_height_f;
@@ -103,6 +107,7 @@ pub fn init(
         .samples_per_pixel = samples_per_pixel,
         .pixel_samples_scale = pixel_samples_scale,
         .max_depth = max_depth,
+        .vfov = vfov,
     };
 }
 

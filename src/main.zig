@@ -4,15 +4,16 @@ const assert = std.debug.assert;
 const Camera = @import("Camera.zig");
 const hittable = @import("hittable.zig");
 const vec = @import("vector.zig");
+const ih = @import("io_helpers.zig");
 const material = @import("material.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 
-const image_width: usize = 1200;
+const image_width: usize = 100;
 const aspect_ratio: f64 = 16.0 / 9.0;
-const samples_per_pixel = 500;
-const max_depth = 50;
+const samples_per_pixel = 10;
+const max_depth = 10;
 const vfov = 20.0;
 const lookfrom = Point3{ 13, 2, 3 };
 const lookat = Point3{ 0, 0, 0 };
@@ -107,7 +108,7 @@ pub fn main() !void {
             if (choose_mat < 0.8) {
                 const albedo = vec.randomInRange(0, 1, rand) * vec.randomInRange(0, 1, rand);
                 const mat = try allocator.create(material.Material);
-                mat.lambertian = .{ .albedo = albedo };
+                mat.* = material.Material{ .lambertian = .{ .albedo = albedo } };
                 try material_list.append(allocator, mat);
                 try world.add(allocator, hittable.Object{
                     .sphere = .{ .center = center, .radius = 0.2, .mat = mat },
@@ -116,14 +117,14 @@ pub fn main() !void {
                 const albedo = vec.randomInRange(0.5, 1, rand);
                 const fuzz = rand.float(f64) / 2.0;
                 const mat = try allocator.create(material.Material);
-                mat.metal = .{ .albedo = albedo, .fuzz = fuzz };
+                mat.* = .{ .metal = .{ .albedo = albedo, .fuzz = fuzz } };
                 try material_list.append(allocator, mat);
                 try world.add(allocator, hittable.Object{
                     .sphere = .{ .center = center, .radius = 0.2, .mat = mat },
                 });
             } else {
                 const mat = try allocator.create(material.Material);
-                mat.dielectric = .{ .refraction_index = 1.5 };
+                mat.* = .{ .dielectric = .{ .refraction_index = 1.5 } };
                 try material_list.append(allocator, mat);
                 try world.add(allocator, hittable.Object{
                     .sphere = .{ .center = center, .radius = 0.2, .mat = mat },
@@ -164,7 +165,6 @@ pub fn main() !void {
             .mat = &mat3,
         },
     });
-
     // --------------------------------------------
 
     const camera = Camera.init(
@@ -180,7 +180,12 @@ pub fn main() !void {
         focus_dist,
     );
 
-    try camera.render(&world, rand, f, stdout);
+    const frame = try allocator.alloc(@Vector(4, u8), camera.image_width * camera.image_height);
+    defer allocator.free(frame);
+
+    try camera.render(&world, rand, frame, stdout);
+
+    try ih.writePPM(frame, camera.image_width, camera.image_height, f);
 
     try stderr.flush();
     try stdout.flush();

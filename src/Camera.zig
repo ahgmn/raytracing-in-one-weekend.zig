@@ -34,14 +34,9 @@ pub fn render(
     self: *const @This(),
     world: *const hittable.List,
     rand: std.Random,
-    image_writer: *std.Io.Writer,
+    frame: []@Vector(4, u8),
     progress_writer: *std.Io.Writer,
 ) !void {
-    try image_writer.print(
-        "P3\n{} {}\n255\n",
-        .{ self.image_width, self.image_height },
-    );
-
     for (0..self.image_height) |row| {
         for (0..self.image_width) |col| {
             var pixel_color = Color3{ 0, 0, 0 };
@@ -49,9 +44,9 @@ pub fn render(
                 const r = getRay(self, col, row, rand);
                 pixel_color += rayColor(&r, self.max_depth, world, rand);
             }
-            try ih.writeColor(
+            ih.writeColorPixel(
                 vec.from(self.pixel_samples_scale) * pixel_color,
-                image_writer,
+                &frame[self.image_width * row + col],
             );
         }
         try ih.writeProgressBar(row + 1, self.image_height, 40, progress_writer);

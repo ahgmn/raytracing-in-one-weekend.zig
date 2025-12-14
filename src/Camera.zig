@@ -1,5 +1,6 @@
-const hittable = @import("hittable.zig");
 const std = @import("std");
+
+const hittable = @import("hittable.zig");
 const ih = @import("io_helpers.zig");
 const mh = @import("math_helpers.zig");
 const Ray = @import("Ray.zig");
@@ -7,6 +8,11 @@ const vec = @import("vector.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
+
+pub const RenderProgress = struct {
+    rows_done: std.atomic.Value(usize) = .init(0),
+    done: std.atomic.Value(bool) = .init(false),
+};
 
 image_width: usize,
 image_height: usize,
@@ -36,6 +42,7 @@ pub fn render(
     rand: std.Random,
     frame: []@Vector(4, u8),
     progress_writer: *std.Io.Writer,
+    render_progress: *RenderProgress,
 ) !void {
     for (0..self.image_height) |row| {
         for (0..self.image_width) |col| {
@@ -49,6 +56,7 @@ pub fn render(
                 &frame[self.image_width * row + col],
             );
         }
+        render_progress.rows_done.store(row + 1, .release);
         try ih.writeProgressBar(row + 1, self.image_height, 40, progress_writer);
         try progress_writer.flush();
     }

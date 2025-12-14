@@ -1,16 +1,18 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
+const zwd = @import("zwdisplay");
+
 const Camera = @import("Camera.zig");
 const hittable = @import("hittable.zig");
-const vec = @import("vector.zig");
 const ih = @import("io_helpers.zig");
 const material = @import("material.zig");
+const vec = @import("vector.zig");
 const Vec3 = vec.Vec3;
 const Color3 = vec.Color3;
 const Point3 = vec.Point3;
 
-const image_width: usize = 100;
+const image_width: usize = 200;
 const aspect_ratio: f64 = 16.0 / 9.0;
 const samples_per_pixel = 10;
 const max_depth = 10;
@@ -183,13 +185,111 @@ pub fn main() !void {
     const frame = try allocator.alloc(@Vector(4, u8), camera.image_width * camera.image_height);
     defer allocator.free(frame);
 
-    try camera.render(&world, rand, frame, stdout);
+    // Window
+    // --------------------------------------------
+    var app_state: zwd.AppState = undefined;
+    var render_progress: Camera.RenderProgress = .{};
+    var user_data: UserData = .{
+        .frame = frame,
+        .render_progress = &render_progress,
+        .render_width = camera.image_width,
+        .render_height = camera.image_height,
+    };
+    try app_state.init(draw, 800, 800 / aspect_ratio, &user_data);
+    defer app_state.deinit();
+    // --------------------------------------------
+
+    _ = try std.Thread.spawn(.{}, run, .{
+        &camera,
+        &world,
+        rand,
+        frame,
+        &render_progress,
+        stdout,
+        f,
+    });
+
+    try app_state.run();
 
     try ih.writePPM(frame, camera.image_width, camera.image_height, f);
 
     try stderr.flush();
     try stdout.flush();
     try f.flush();
+}
+
+fn run(
+    camera: *const Camera,
+    world: *const hittable.List,
+    rand: std.Random,
+    frame: []@Vector(4, u8),
+    progress: *Camera.RenderProgress,
+    stdout: *std.Io.Writer,
+    file: *std.Io.Writer,
+) !void {
+    try camera.render(world, rand, frame, stdout, progress);
+    progress.done.store(true, .release);
+    try ih.writePPM(frame, camera.image_width, camera.image_height, file);
+}
+
+const UserData = struct {
+    frame: []@Vector(4, u8),
+    render_progress: *Camera.RenderProgress,
+    render_width: usize,
+    render_height: usize,
+};
+
+fn draw(
+    pixels: []u32,
+    resolution: zwd.Resolution,
+    dt_s: f32,
+    input_state: *const zwd.InputState,
+    userdata: *anyopaque,
+) void {
+    _ = dt_s;
+    _ = input_state;
+
+    const convertPixel = struct {
+        inline fn convert(p: @Vector(4, u8)) u32 {
+            const r: u32 = p[0];
+            const g: u32 = p[1];
+            const b: u32 = p[2];
+            const a: u32 = p[3];
+            return a << 24 | r << 16 | g << 8 | b << 0;
+        }
+    }.convert;
+
+    const data: *UserData = @ptrCast(@alignCast(userdata));
+    @memset(pixels, 0xFF000000);
+
+    const src_width = data.render_width;
+    const src_height = data.render_height;
+
+    const dst_width: usize = @intCast(resolution.width);
+    const dst_height: usize = @intCast(resolution.height);
+
+    const scale_x: f64 = @as(f64, @floatFromInt(src_width)) / @as(f64, @floatFromInt(dst_width));
+    const scale_y: f64 = @as(f64, @floatFromInt(src_height)) / @as(f64, @floatFromInt(dst_height));
+
+    const rows_done = data.render_progress.rows_done.load(.acquire);
+    if (rows_done == 0) return;
+    const rows_dst: usize = blk: {
+        const rows_done_f: f64 = @floatFromInt(rows_done);
+        break :blk @intFromFloat(rows_done_f * 1 / scale_y);
+    };
+    for (0..rows_dst) |row| {
+        const src_y: usize = blk: {
+            const row_f: f64 = @floatFromInt(row);
+            break :blk @intFromFloat(row_f * scale_y);
+        };
+        for (0..dst_width) |col| {
+            const src_x: usize = blk: {
+                const col_f: f64 = @floatFromInt(col);
+                break :blk @intFromFloat(col_f * scale_x);
+            };
+            pixels[dst_width * row + col] = convertPixel(data.frame[src_width * src_y + src_x]);
+        }
+    }
 }
 
 test {

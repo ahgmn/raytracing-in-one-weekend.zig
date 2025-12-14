@@ -30,6 +30,10 @@
               zig
               zls_0_15
               lldb
+              wayland
+              wayland-scanner
+              wayland-protocols
+              pkg-config
             ];
           };
         }
